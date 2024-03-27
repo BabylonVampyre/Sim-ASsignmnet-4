@@ -60,6 +60,8 @@ class Bridge(Infra):
         # make variables for the delay time and broken
         self.delay_time = 0
         self.broken = broken
+        #total given delay time attribute
+        self.total_delay_time = 0
 
         # save scenario parameters
         self.breakdown_chances = scenario
@@ -75,13 +77,15 @@ class Bridge(Infra):
     def get_delay_time(self):
         if self.broken:
             if self.length <= 10:
-                self.delay_time = self.random.uniform(10, 20)
+                self.delay_time = round(self.random.uniform(10, 20),3)
             elif self.length <= 50:
-                self.delay_time = self.random.uniform(15, 60)
+                self.delay_time = round(self.random.uniform(15, 60),3)
             elif self.length <= 200:
-                self.delay_time = self.random.uniform(45, 90)
+                self.delay_time = round(self.random.uniform(45, 90),3)
             else:
-                self.delay_time = self.random.triangular(60, 240, 120)
+                self.delay_time = round(self.random.triangular(60, 240, 120),3)
+            #add the delay time to the total delay time
+            self.total_delay_time += self.delay_time
         return self.delay_time
 
 

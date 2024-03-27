@@ -80,6 +80,8 @@ class BangladeshModel(Model):
         # Save scenario to give to the agents in the initiation
         self.scenario = scenario
         self.possible_catagories = ['A', 'B', 'C', 'D']
+        #create empty dataframes for data collection
+        self.df_driving_time = pd.DataFrame(columns=['Total_Driving_Time'])
         # generate the model and generate the networkX and save it
         self.generate_model()
         self.network = self.generate_network()
@@ -88,8 +90,7 @@ class BangladeshModel(Model):
         self.model_vars = {}
         self._agent_records = {}
         self.tables = {}
-        # self.datacollector = mesa.DataCollector()
-        self.df_driving_time = pd.DataFrame(columns=['Total_Driving_Time'])
+
 
     def generate_model(self):
         """
@@ -236,7 +237,6 @@ class BangladeshModel(Model):
         Advance the simulation by one step.
         """
         self.schedule.step()
-        # self.datacollector.collect(self)
 
     def generate_network(self):
         """

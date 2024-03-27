@@ -363,5 +363,6 @@ with_links_df = add_links(combined_df)
 # Remove the unnecessary columns and give each record a unique id
 final_df = remove_columns_and_add_id(with_links_df)
 
+print(final_df['road'].unique())
 # Save to datafile
 final_df.to_csv('../data/N1N2.csv', index=False)
