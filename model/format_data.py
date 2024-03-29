@@ -344,8 +344,26 @@ def extract_traffic_data(road):
                        'Auto Rickshaw', 'Motor Cycle', 'Bi-Cycle', 'Cycle Rickshaw', 'Cart',
                        'Motorized', 'Non Motorized', 'Total AADT']
     df = df.drop(columns=columns_to_drop)
-
+    df['AADT'] = df['AADT'].astype(float)
+    df['Chainage start location'] = df['Chainage start location'].astype(float)
+    df['Chainage end location'] = df['Chainage end location'].astype(float)
     return df
+
+def merge_left_right_lanes(df):
+    """"
+    This method merges the traffic data for roads that are split into a right and left direction
+    it takes the average of both the AADT and drops the other direction
+    :return: a formatted dataframe containing the Chainage of the start of the link,
+    the Chainage of the end of the link, the length of the link and the throuput in AADT as average when double
+    """
+    aggregation ={
+        'AADT' : 'mean',
+        'Chainage start location' : 'first',
+        'Chainage end location' : 'first',
+        'Link length' : 'first'
+    }
+    dropped_df = df.groupby(['Chainage start location']).agg(aggregation)
+    return dropped_df
 
 
 def extract_widths_data(road):
@@ -384,6 +402,24 @@ def extract_widths_data(road):
     df = df.reset_index(drop=True)
 
     return df
+
+def add_ADDT(df, df_aadt):
+###To do:
+#now doesnt differentiate between roads
+    df['AADT'] = None
+    for index, row in df.iterrows():
+        if row['model_type'] == 'bridge':
+            chainage = row['chainage']  # accessing the 'chainage' column from df_bridge
+            # Find the corresponding row in df_aadt
+            aadt_row = df_aadt[(df_aadt['Chainage start location'] <= chainage) & (df_aadt['Chainage end location'] >= chainage)]
+            # Extract the AADT value if a matching row is found
+            if not aadt_row.empty:
+                df.at[index, 'AADT'] = aadt_row.iloc[0]['AADT']
+
+
+
+
+
 
 
 def remove_columns_and_add_id(df):
@@ -429,15 +465,20 @@ combined_df = add_source_sink(df=with_intersections_df, source_sink_df=start_end
 # add links
 with_links_df = add_links(combined_df)
 
-# extract and format throughput data
-roads = ['N1', 'N102', 'N104', 'N105', 'N2', 'N204', 'N207', 'N208']
 #empty list to be filled with dataframes of the road data
 df_traffic_list = []
 df_width_list = []
 #call extraction function and fill list
-for road in roads:
+for road in roads_array:
     df_traffic_list.append(extract_traffic_data(road))
     df_width_list.append(extract_widths_data(road))
+#call the dropping function for the traffic data
+df_traffic_list_dropped = []
+for df in df_traffic_list:
+    df_traffic_list_dropped.append(merge_left_right_lanes(df))
+
+#test addt fucntion
+add_ADDT(with_links_df,df_traffic_list_dropped[0])
 
 # Remove the unnecessary columns and give each record a unique id
 final_df = remove_columns_and_add_id(with_links_df)

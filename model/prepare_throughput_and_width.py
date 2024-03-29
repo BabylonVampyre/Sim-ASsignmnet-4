@@ -29,8 +29,24 @@ def extract_data_traffic(road):
                        'Auto Rickshaw', 'Motor Cycle', 'Bi-Cycle', 'Cycle Rickshaw', 'Cart',
                        'Motorized', 'Non Motorized', 'Total AADT']
     df = df.drop(columns=columns_to_drop)
-
+    df['AADT'] = df['AADT'].astype(float)
     return df
+
+def merge_left_right_lanes(df):
+    """"
+    This method merges the traffic data for roads that are split into a right and left direction
+    it takes the average of both the AADT and drops the other direction
+    :return: a formatted dataframe containing the Chainage of the start of the link,
+    the Chainage of the end of the link, the length of the link and the throuput in AADT as average when double
+    """
+    aggregation ={
+        'AADT' : 'mean',
+        'Chainage start location' : 'first',
+        'Chainage end location' : 'first',
+        'Link length' : 'first'
+    }
+    dropped_df = df.groupby(['Chainage start location']).agg(aggregation)
+    return dropped_df
 
 def extract_widths_data(road):
     """
@@ -78,12 +94,14 @@ df_width_list = []
 for road in roads:
     df_traffic_list.append(extract_data_traffic(road))
     df_width_list.append(extract_widths_data(road))
+df_traffic_list_dropped = []
+for df in df_traffic_list:
+    df_traffic_list_dropped.append(merge_left_right_lanes(df))
 
+# for i in df_traffic_list_dropped:
+#     print(i)
 
-for i in df_traffic_list:
-    print(i)
-
-for j in df_width_list:
-    print(j)
-
+# for j in df_width_list:
+#     print(j)
+#
 
