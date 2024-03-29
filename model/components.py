@@ -51,11 +51,13 @@ class Bridge(Infra):
     """
 
     def __init__(self, unique_id, model, length=0,
-                 name='Unknown', road_name='Unknown', condition='Unknown', scenario=[0, 0, 0, 0], broken=False):
+                 name='Unknown', road_name='Unknown', condition='Unknown', aadt = 'Unknown',NoOfLanes = 'Unknown', scenario=[0, 0, 0, 0], broken=False):
         super().__init__(unique_id, model, length, name, road_name)
 
         self.condition = condition
         self.length = length
+        self.aadt = aadt
+        self.NoOfLanes = NoOfLanes
 
         # make variables for the delay time and broken
         self.delay_time = 0
