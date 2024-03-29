@@ -347,6 +347,7 @@ def extract_traffic_data(road):
     df['AADT'] = df['AADT'].astype(float)
     df['Chainage start location'] = df['Chainage start location'].astype(float)
     df['Chainage end location'] = df['Chainage end location'].astype(float)
+    df['road'] = road
     return df
 
 def merge_left_right_lanes(df):
@@ -360,7 +361,8 @@ def merge_left_right_lanes(df):
         'AADT' : 'mean',
         'Chainage start location' : 'first',
         'Chainage end location' : 'first',
-        'Link length' : 'first'
+        'Link length' : 'first',
+        'road': 'first'
     }
     dropped_df = df.groupby(['Chainage start location']).agg(aggregation)
     return dropped_df
@@ -392,7 +394,7 @@ def extract_widths_data(road):
     # drop wrong columns titles
     df.drop(0, inplace=True)
     # give the column names
-    df.columns = ['TotalRecord', 'RoadID', 'RoadNo', 'StartChainage', 'EndChainage', 'CWayWidth',
+    df.columns = ['TotalRecord', 'RoadID', 'RoadNo', 'Chainage start location', 'Chainage end location', 'CWayWidth',
                   'NoOfLanes', 'RoadName', 'RoadClass', 'RoadLength', 'StartLocation',
                   'EndLocation', 'ROADW']
     # drop unnecessary columns
@@ -400,21 +402,45 @@ def extract_widths_data(road):
                        'StartLocation', 'EndLocation', 'ROADW']
     df = df.drop(columns=columns_to_drop)
     df = df.reset_index(drop=True)
+    df['Chainage start location'] = df['Chainage start location'].astype(float)
+    df['Chainage end location'] = df['Chainage end location'].astype(float)
+    df['road'] = road
 
     return df
 
-def add_ADDT(df, df_aadt):
+def add_AADT(df, df_aadt):
 ###To do:
 #now doesnt differentiate between roads
     df['AADT'] = None
     for index, row in df.iterrows():
         if row['model_type'] == 'bridge':
             chainage = row['chainage']  # accessing the 'chainage' column from df_bridge
+            road_name = row['road']
             # Find the corresponding row in df_aadt
-            aadt_row = df_aadt[(df_aadt['Chainage start location'] <= chainage) & (df_aadt['Chainage end location'] >= chainage)]
+            aadt_row = df_aadt[(df_aadt['Chainage start location'] <= chainage) & (df_aadt['Chainage end location'] >= chainage)
+                               & (df_aadt['road'] == road_name)
+            ]
             # Extract the AADT value if a matching row is found
             if not aadt_row.empty:
                 df.at[index, 'AADT'] = aadt_row.iloc[0]['AADT']
+    return df
+
+def add_width(df, df_width):
+    df['NoOfLanes'] = None
+    for index, row in df.iterrows():
+        if row['model_type'] == 'bridge':
+            chainage = row['chainage']  # accessing the 'chainage' column from df_bridge
+            road_name = row['road']
+            # Find the corresponding row in df_aadt
+            width_row = df_width[
+                (df_width['Chainage start location'] <= chainage) & (df_width['Chainage end location'] >= chainage)
+                & (df_width['road'] == road_name)
+                ]
+            # Extract the AADT value if a matching row is found
+            if not width_row.empty:
+                df.at[index, 'NoOfLanes'] = width_row.iloc[0]['NoOfLanes']
+    return df
+
 
 
 
@@ -433,7 +459,7 @@ def remove_columns_and_add_id(df):
     # The id of the intersections must stay the same, the rest get a new id
     df['id'] = df['intersection_id'].fillna(df['unique_id'])
     # Define the desired column order
-    desired_column_order = ['road', 'id', 'model_type', 'condition', 'name', 'lat', 'lon', 'length']
+    desired_column_order = ['road', 'id', 'model_type', 'condition', 'name', 'lat', 'lon', 'length', 'AADT', 'NoOfLanes']
     # Reassign the DataFrame with the desired column order
     df = df[desired_column_order]
 
@@ -465,24 +491,32 @@ combined_df = add_source_sink(df=with_intersections_df, source_sink_df=start_end
 # add links
 with_links_df = add_links(combined_df)
 
-#empty list to be filled with dataframes of the road data
+# empty list to be filled with dataframes of the road data
 df_traffic_list = []
 df_width_list = []
-#call extraction function and fill list
+# call extraction function and fill list
 for road in roads_array:
     df_traffic_list.append(extract_traffic_data(road))
     df_width_list.append(extract_widths_data(road))
-#call the dropping function for the traffic data
+
+# call the dropping function for the traffic data
 df_traffic_list_dropped = []
 for df in df_traffic_list:
     df_traffic_list_dropped.append(merge_left_right_lanes(df))
 
-#test addt fucntion
-add_ADDT(with_links_df,df_traffic_list_dropped[0])
+df_concatted_traffic = pd.concat(df_traffic_list_dropped)
+with_AADT_df = add_AADT(with_links_df, df_concatted_traffic)
+
+df_concatted_width = pd.concat(df_width_list)
+with_width_df = add_width(with_AADT_df, df_concatted_width)
+
+# test addt fucntion
+# with_AADT_df = add_AADT(with_links_df, df_traffic_list_dropped[0])
+print(with_width_df)
 
 # Remove the unnecessary columns and give each record a unique id
-final_df = remove_columns_and_add_id(with_links_df)
+final_df = remove_columns_and_add_id(with_width_df)
 
-print(final_df['road'].unique())
+# print(final_df['road'].unique())
 # Save to datafile
 final_df.to_csv('../data/N1N2.csv', index=False)
