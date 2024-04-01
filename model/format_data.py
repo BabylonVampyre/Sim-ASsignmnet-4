@@ -1,5 +1,11 @@
 import numpy as np
 import pandas as pd
+import geopandas as gpd
+from shapely.geometry import Point
+from fiona.crs import from_epsg
+from pyproj import CRS
+
+
 
 # To help with printing/debugging
 pd.set_option('display.width', 320)
@@ -436,16 +442,60 @@ def add_width(df, df_width):
                 (df_width['Chainage start location'] <= chainage) & (df_width['Chainage end location'] >= chainage)
                 & (df_width['road'] == road_name)
                 ]
-            # Extract the AADT value if a matching row is found
+            # Extract the number of lanes value (which is the width) if a matching row is found
             if not width_row.empty:
                 df.at[index, 'NoOfLanes'] = width_row.iloc[0]['NoOfLanes']
     return df
 
+# def add_floodrisks(df):
+#     df['flood_risk'] = None
+#     gdf = gpd.read_file('../data/flood_data/bgd_nhr_floods_sparsso.shp')
+#     print(len(df))
+#     for index, row in df.iterrows():
+#         print(index)
+#         if row['model_type'] == 'bridge':
+#             point_coords = Point(row['lon'], row['lat'])
+#             for gdf_index, gdf_row in gdf.iterrows():
+#                 if point_coords.within(gdf_row['geometry']):
+#                     df.at[index, 'flood_risk'] = gdf_row['FLOODCAT']
+#                     break
+#     return df
+def add_floodrisks(df):
+    df['flood_risk'] = None
+    gdf = gpd.read_file('../data/flood_data/bgd_nhr_floods_sparsso.shp')
+    gdf = gdf[['FLOODCAT', 'geometry']]  # Select only necessary columns
+
+    # Manually specify the CRS for the GeoDataFrame from the shapefile
+    gdf.crs = 'EPSG:4326'  # Assuming WGS84 for example
+
+    # Create a GeoDataFrame of Point objects from the DataFrame coordinates
+    geometry = [Point(lon, lat) for lon, lat in zip(df['lon'], df['lat'])]
+    df = gpd.GeoDataFrame(df, geometry=geometry, crs=CRS.from_epsg(4326))
+
+    # Ensure both GeoDataFrames have the same CRS
+    df = df.to_crs(gdf.crs)
+
+    # Perform spatial join
+    joined = gpd.sjoin(df, gdf, predicate='within', how='left')
+
+    # Update 'flood_risk' column in the original DataFrame
+    df['flood_risk_cat'] = joined.groupby(joined.index)['FLOODCAT'].sum()
+    df['flood_risk'] = df['flood_risk_cat']
+
+    def map_flood_risk(flood_risk_cat):
+        if flood_risk_cat == 0:  # not flood prone
+            return 0
+        elif flood_risk_cat in [3, 6]:  # low flooding
+            return 1
+        elif flood_risk_cat in [2, 5, 8]:  # moderate flooding
+            return 2
+        elif flood_risk_cat in [1, 4, 7]:  # severe flooding
+            return 3
+
+    df['flood_risk'] = df['flood_risk_cat'].apply(map_flood_risk)
 
 
-
-
-
+    return df
 
 
 def remove_columns_and_add_id(df):
@@ -459,7 +509,7 @@ def remove_columns_and_add_id(df):
     # The id of the intersections must stay the same, the rest get a new id
     df['id'] = df['intersection_id'].fillna(df['unique_id'])
     # Define the desired column order
-    desired_column_order = ['road', 'id', 'model_type', 'condition', 'name', 'lat', 'lon', 'length', 'AADT', 'NoOfLanes']
+    desired_column_order = ['road', 'id', 'model_type', 'condition', 'name', 'lat', 'lon', 'length', 'AADT', 'NoOfLanes', 'flood_risk']
     # Reassign the DataFrame with the desired column order
     df = df[desired_column_order]
 
@@ -514,8 +564,10 @@ with_width_df = add_width(with_AADT_df, df_concatted_width)
 # with_AADT_df = add_AADT(with_links_df, df_traffic_list_dropped[0])
 print(with_width_df)
 
+with_flood_risks_df = add_floodrisks(with_width_df)
+
 # Remove the unnecessary columns and give each record a unique id
-final_df = remove_columns_and_add_id(with_width_df)
+final_df = remove_columns_and_add_id(with_flood_risks_df)
 
 # print(final_df['road'].unique())
 # Save to datafile
