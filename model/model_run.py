@@ -34,7 +34,8 @@ scenario_counter = 0
 for scenario_index, i in enumerate(scenario_list):
     # make an empty dataframe to save all runs of a single scenario and one for the total delay time of bridges
     df_scenario = pd.DataFrame()
-    df_bridge_delay_time = pd.DataFrame(columns=['ID', 'Total delay time'])
+    bridge_columns = ['ID', 'Total delay time','Total passed traffic','KPI']
+    df_bridge_delay_time = pd.DataFrame(columns=bridge_columns)
     for seed_index, j in enumerate(seed_list):
         sim_model = BangladeshModel(scenario=i, seed=j)
 
@@ -42,11 +43,13 @@ for scenario_index, i in enumerate(scenario_list):
             sim_model.step()
             #if the final setp, get the id and total delay time of the bridges out of the model and into a dataframe
             if k == (run_length-1):
-                df_bridge_delay_time_singlerun = pd.DataFrame(columns=['ID', 'Total delay time'])
+                df_bridge_delay_time_singlerun = pd.DataFrame(columns=bridge_columns)
                 for agent in sim_model.schedule.agents: #itterate through agents
                     if isinstance(agent, Bridge): #if bridge, then save its required attributes
                         df_bridge_delay_time_singlerun.loc[len(df_bridge_delay_time_singlerun)] =\
-                            {'ID': int(agent.unique_id), 'Total delay time': int(agent.total_delay_time)}
+                            {'ID': int(agent.unique_id), 'Total delay time': int(agent.total_delay_time)
+                                ,'Total passed traffic' : int(agent.total_passed_traffic),
+                             'KPI' :int(agent.total_delay_time/agent.total_passed_traffic)}
 
         # call the dataframe of the single run and change the column names to reflect what seed it used
         df_scenario_singlerun = sim_model.df_driving_time
@@ -55,7 +58,7 @@ for scenario_index, i in enumerate(scenario_list):
         df_scenario = pd.concat([df_scenario, df_scenario_singlerun], axis=1)
 
         # call the dataframe of the single run and change the column names to reflect what seed it used
-        df_bridge_delay_time_singlerun.columns = ['ID','Total delay time' + str(j)]
+        df_bridge_delay_time_singlerun.columns = ['ID', 'Total delay time'+ str(j),'Total passed traffic'+ str(j),'KPI' + str(j)]
         # merge the single run data frame with the base dataframe to save all runs of a single scenario in one DF
         if df_bridge_delay_time.empty:
             df_bridge_delay_time = df_bridge_delay_time_singlerun
@@ -65,10 +68,12 @@ for scenario_index, i in enumerate(scenario_list):
 
         # print how far the full run is
         run_counter += 1
-        print(run_counter, '/', number_of_runs, 'Done. Next up: scenario:', scenario_counter, 'seed: ', j)
+        print(run_counter, '/', number_of_runs, 'Done:', scenario_counter, 'seed: ', j)
     scenario_counter += 1
     df_scenario.to_csv(f"../model/experiment/Scenario{scenario_index}_Vehicle_delay_time.csv",
                        index=False)
     df_bridge_delay_time.fillna(0)
     df_bridge_delay_time.to_csv(f"../model/experiment/Scenario{scenario_index}_Bridge_delay_time.csv",
                                 index=False)
+
+

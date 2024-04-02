@@ -172,7 +172,7 @@ class BangladeshModel(Model):
                     self.sinks.append(agent.unique_id)
                 elif model_type == 'bridge':
                     agent = Bridge(row['id'], self, row['length'],
-                                   name, row['road'], row['condition'],row['AADT'],row['NoOfLanes'], scenario=self.scenario)
+                                   name, row['road'], row['condition'],row['AADT'],row['flood_risk'], scenario=self.scenario)
                 elif model_type == 'link':
                     agent = Link(row['id'], self, row['length'], name, row['road'])
                 elif model_type == 'intersection':

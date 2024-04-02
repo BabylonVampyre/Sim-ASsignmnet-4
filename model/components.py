@@ -51,14 +51,15 @@ class Bridge(Infra):
     """
 
     def __init__(self, unique_id, model, length=0,
-                 name='Unknown', road_name='Unknown', condition='Unknown', aadt = 'Unknown',NoOfLanes = 'Unknown', scenario=[0, 0, 0, 0], broken=False):
+                 name='Unknown', road_name='Unknown', condition='Unknown',
+                 aadt = 'Unknown',flood_risk = 'Unknown', scenario=[0, 0, 0, 0], broken=False):
         super().__init__(unique_id, model, length, name, road_name)
 
         self.condition = condition
         self.length = length
         self.aadt = aadt
-        self.NoOfLanes = NoOfLanes
-
+        self.flood_risk = flood_risk
+        self.total_passed_traffic = 1
         # make variables for the delay time and broken
         self.delay_time = 0
         self.broken = broken
@@ -77,6 +78,7 @@ class Bridge(Infra):
             self.broken = True
 
     def get_delay_time(self):
+        self.total_passed_traffic += 1
         if self.broken:
             if self.length <= 10:
                 self.delay_time = round(self.random.uniform(10, 20),3)
