@@ -1,5 +1,6 @@
 from mesa import Agent
 from enum import Enum
+import numpy as np
 
 
 # ---------------------------------------------------------------
@@ -52,13 +53,14 @@ class Bridge(Infra):
 
     def __init__(self, unique_id, model, length=0,
                  name='Unknown', road_name='Unknown', condition='Unknown',
-                 aadt = 'Unknown',flood_risk = 'Unknown', scenario=[0, 0, 0, 0], broken=False):
+                 aadt = 'Unknown',flood_risk = 'Unknown', scenario=[0, 0, 0, 0, 0], broken=False):
         super().__init__(unique_id, model, length, name, road_name)
 
         self.condition = condition
         self.length = length
         self.aadt = aadt
-        self.flood_risk = flood_risk
+        # calculate flood risk based on the scenario number and the chances of flood risk
+        self.flood_risk = flood_risk * 2.5 * scenario[4]
         self.total_passed_traffic = 1
         # make variables for the delay time and broken
         self.delay_time = 0
@@ -72,22 +74,27 @@ class Bridge(Infra):
         # search what index corresponds with the condition of the bridge
         index = self.model.possible_catagories.index(self.condition)
         # save the bridge its chance to break
-        self.chance_to_break = self.breakdown_chances[index]
+        self.chance_to_break = 5*(np.sqrt(self.breakdown_chances[index]+self.flood_risk))
 
         if self.chance_to_break >= (self.random.random() * 100):
             self.broken = True
 
     def get_delay_time(self):
         self.total_passed_traffic += 1
+        # calculate delay due to traffic jam, assuming 40% of traffic is in rush hours
+        # and a traffic jam increases your delay by 4 times
+        # and the critical point for roads without delays is 2400 cars/hour
+        self.traffic_jam_chance = (((self.aadt*0.4)/4)/2400)**2
+        self.delay_factor = self.traffic_jam_chance*0.4*4
         if self.broken:
             if self.length <= 10:
-                self.delay_time = round(self.random.uniform(10, 20),3)
+                self.delay_time = round(self.random.uniform(10, 20),3)*(1+self.delay_factor)
             elif self.length <= 50:
-                self.delay_time = round(self.random.uniform(15, 60),3)
+                self.delay_time = round(self.random.uniform(15, 60),3)*(1+self.delay_factor)
             elif self.length <= 200:
-                self.delay_time = round(self.random.uniform(45, 90),3)
+                self.delay_time = round(self.random.uniform(45, 90),3)*(1+self.delay_factor)
             else:
-                self.delay_time = round(self.random.triangular(60, 240, 120),3)
+                self.delay_time = round(self.random.triangular(60, 240, 120),3)*(1+self.delay_factor)
             #add the delay time to the total delay time
             self.total_delay_time += self.delay_time
         return self.delay_time

@@ -6,12 +6,12 @@ from components import Bridge
     Print output at terminal
 """
 # ---------------------------------------------------------------
-# iniciate scenario's
-S0 = [0, 0, 0, 0]
-S1 = [0, 0, 0, 5]
-S2 = [0, 0, 5, 10]
-S3 = [0, 5, 10, 20]
-S4 = [5, 10, 20, 40]
+# iniciate scenario's, last number is the scenario number
+S0 = [0, 0, 0, 0, 0]
+S1 = [0, 0, 0, 5, 1]
+S2 = [0, 0, 5, 10, 2]
+S3 = [0, 5, 10, 20, 3]
+S4 = [5, 10, 20, 40, 4]
 
 
 # run time 5 x 24 hours; 1 tick 1 minute
