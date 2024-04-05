@@ -415,8 +415,12 @@ def extract_widths_data(road):
     return df
 
 def add_AADT(df, df_aadt):
-###To do:
-#now doesnt differentiate between roads
+    """
+   This Method adds the AADT data to the dataframe
+   :param df: the dataframe without the aadts
+   :param df_aadt: all AADT data that needs to be added
+   :return: a dataframe with aadt data in it
+   """
     df['AADT'] = None
     for index, row in df.iterrows():
         if row['model_type'] == 'bridge':
@@ -431,7 +435,14 @@ def add_AADT(df, df_aadt):
                 df.at[index, 'AADT'] = aadt_row.iloc[0]['AADT']
     return df
 
+
 def add_width(df, df_width):
+    """
+     This Method adds the width data to the dataframe, which is based on the number of lanes
+     :param df: the dataframe without the width
+     :param df_width: all width data that needs to be added
+     :return: a dataframe with width data in it
+     """
     df['NoOfLanes'] = None
     for index, row in df.iterrows():
         if row['model_type'] == 'bridge':
@@ -447,20 +458,14 @@ def add_width(df, df_width):
                 df.at[index, 'NoOfLanes'] = width_row.iloc[0]['NoOfLanes']
     return df
 
-# def add_floodrisks(df):
-#     df['flood_risk'] = None
-#     gdf = gpd.read_file('../data/flood_data/bgd_nhr_floods_sparsso.shp')
-#     print(len(df))
-#     for index, row in df.iterrows():
-#         print(index)
-#         if row['model_type'] == 'bridge':
-#             point_coords = Point(row['lon'], row['lat'])
-#             for gdf_index, gdf_row in gdf.iterrows():
-#                 if point_coords.within(gdf_row['geometry']):
-#                     df.at[index, 'flood_risk'] = gdf_row['FLOODCAT']
-#                     break
-#     return df
+
 def add_floodrisks(df):
+    """
+       This Method imports the flood data, then, for each record, it determines the flood factor.
+       :param df: the dataframe without flood data
+       :return: a dataframe with the correct flood_risk represented as 0,1,2,3 from not flood prone to severly
+       flood prone
+       """
     df['flood_risk'] = None
     gdf = gpd.read_file('../data/flood_data/bgd_nhr_floods_sparsso.shp')
     gdf = gdf[['FLOODCAT', 'geometry']]  # Select only necessary columns
