@@ -1,11 +1,7 @@
 import numpy as np
 import pandas as pd
 
-###This file is a working file and not needed to run or submit
-
-
-
-
+# This file is a working file and not needed to run or submit
 
 
 def extract_data_traffic(road):
@@ -15,10 +11,10 @@ def extract_data_traffic(road):
     :return: a formatted dataframe containing the Chainage of the start of the link,
     the Chainage of the end of the link, the length of the link and the throuput in AADT
     """
-    #import data and format it into a readable dataframe
-    #it takes a string of what road needs to be read and formatted
+    # import data and format it into a readable dataframe
+    # it takes a string of what road needs to be read and formatted
     df = pd.read_html(f"../data/RMMS/{road}.traffic.htm")
-    #format data and rename headers
+    # format data and rename headers
     table = pd.concat(df[4:])
     column_names = table.iloc[2]
     column_names[0] = 'Link number'
@@ -28,7 +24,7 @@ def extract_data_traffic(road):
     column_names[8] = 'Link length'
     column_names[25] = 'AADT'
     table.columns = column_names
-    table = table.drop(index = [0,1,2])
+    table = table.drop(index=[0, 1, 2])
     df = table.reset_index(drop=True)
 
     columns_to_drop = ['Link number', 'Link name', 'LRP', 'Offset', 'Heavy Truck', 'Medium Truck',
@@ -40,17 +36,19 @@ def extract_data_traffic(road):
     return df
 
 def merge_left_right_lanes(df):
+
+
     """"
     This method merges the traffic data for roads that are split into a right and left direction
     it takes the average of both the AADT and drops the other direction
     :return: a formatted dataframe containing the Chainage of the start of the link,
     the Chainage of the end of the link, the length of the link and the throuput in AADT as average when double
     """
-    aggregation ={
-        'AADT' : 'mean',
-        'Chainage start location' : 'first',
-        'Chainage end location' : 'first',
-        'Link length' : 'first'
+    aggregation = {
+        'AADT': 'mean',
+        'Chainage start location': 'first',
+        'Chainage end location': 'first',
+        'Link length': 'first'
     }
     dropped_df = df.groupby(['Chainage start location']).agg(aggregation)
     return dropped_df
@@ -62,7 +60,7 @@ def extract_widths_data(road):
     :return: a formatted dataframe containing the Chainage of the start of the no of lanes,
     the Chainage of the end of the no of lanes and the number of lanes
     """
-    #open the file
+    # open the file
     with open(f"../data/RMMS/{road}.widths.txt", 'r') as file:
         lines = file.readlines()
 
@@ -76,28 +74,28 @@ def extract_widths_data(road):
 
     # Create DataFrame
     df = pd.DataFrame(data)
-    #transpose the data
+    # transpose the data
     df = df.T
-    #drop wrong columns titles
-    df.drop(0,inplace=  True)
-    #give the column names
+    # drop wrong columns titles
+    df.drop(0, inplace= True)
+    # give the column names
     df.columns = ['TotalRecord', 'RoadID', 'RoadNo', 'StartChainage', 'EndChainage', 'CWayWidth',
-                                     'NoOfLanes', 'RoadName', 'RoadClass', 'RoadLength', 'StartLocation',
-                  'EndLocation','ROADW']
-    #drop unnecessary columns
-    columns_to_drop = ['TotalRecord', 'RoadID', 'RoadNo','CWayWidth','RoadName', 'RoadClass', 'RoadLength',
-                       'StartLocation', 'EndLocation','ROADW']
-    df = df.drop(columns = columns_to_drop)
+                  'NoOfLanes', 'RoadName', 'RoadClass', 'RoadLength', 'StartLocation',
+                  'EndLocation', 'ROADW']
+    # drop unnecessary columns
+    columns_to_drop = ['TotalRecord', 'RoadID', 'RoadNo', 'CWayWidth', 'RoadName', 'RoadClass', 'RoadLength',
+                       'StartLocation', 'EndLocation', 'ROADW']
+    df = df.drop(columns=columns_to_drop)
     df = df.reset_index(drop=True)
 
     return df
 
-#list of roads needed
-roads = ['N1', 'N102', 'N104', 'N105' ,'N2', 'N204', 'N207' ,'N208']
-#empty list to be filled with dataframes of the road data
+# list of roads needed
+roads = ['N1', 'N102', 'N104', 'N105', 'N2', 'N204', 'N207', 'N208']
+# empty list to be filled with dataframes of the road data
 df_traffic_list = []
 df_width_list = []
-#call extraction function and fill list
+# call extraction function and fill list
 for road in roads:
     df_traffic_list.append(extract_data_traffic(road))
     df_width_list.append(extract_widths_data(road))
@@ -110,5 +108,3 @@ for df in df_traffic_list:
 
 # for j in df_width_list:
 #     print(j)
-#
-
