@@ -1,4 +1,4 @@
-# EPA133a Assignment 3 - Network Model Generation
+# EPA133a Assignment 4 - Network Analysis
 
 Created by: EPA133a Group 14
 
@@ -13,10 +13,21 @@ Created by: EPA133a Group 14
 
 ## How to Use
 The requirements are listed in the requirements.
-To run the code, simply run the model_run.py file. This will run five different scenario's and output the five csv files in the experiment folder
-If you want to generate the N1N2.csv file (which has already been provided) yourself, run the format_data.py file. This takes the _roads3.csv and the BMMS_overview.xlsx files in the data folder as input
-If you want to generate the plots(which have been provided in the report), run the experiment_viz.py.
-If you want to show the model visualiser, rn model_viz
+To run the code, simply run the model_run.py file. This will run for five different scenario's 
+and output the csv files in the experiment folder. 
+Per scenario, two different csv files are generated, 
+one for the total driving time per car and one for the total bridge delay time and its passed vehicles.
+The model_run.py uses the model.py for the mesa model, which in turns uses
+the agents form the components.py file and the N1N2.csv inside the data file.
+The N1N2.csv file has allready been correctly generated, 
+but if you want to generate the file yourself, run the format_data.py file. 
+This takes the _roads3.csv,the BMMS_overview.xlsx and the files in the RMMS folder as input. 
+The RMMS folder has data files for the traffic throughput and the lane width. 
+The lane width is not used in the model, but is still added to the N1N2.csv file which is a legacy feature from an older version.
+If you want to generate the plot about the results of the model
+(which has been provided in the report), run the experiment_viz.py. This uses the data inside the experiment folder
+If you want to generate the map with flood risk of Bangladesh (which has been provided in the report), run plotting flood category.py.
+If you want to show the model visualiser, run model_viz.
 
 ## Notes
 Python version 3.11 was used.
